@@ -1,0 +1,63 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+share/python-wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+
+# PyTorch/TensorFlow checkpoints
+*.pt
+*.pth
+*.ckpt
+
+# Dataset and downloaded data
+data/
+cifar-10-batches-py/
+cifar-10-python.tar.gz
+
+# Logs and outputs
+*.log
+runs/
+tb_logs/
+outputs/
+
+# Environment / OS
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+.env
+.venv
+venv/
+ENV/
+env.bak
+venv.bak
+
+# Editors
+.vscode/
+.idea/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.swp
