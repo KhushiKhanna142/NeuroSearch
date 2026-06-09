@@ -2,38 +2,38 @@
   "top5": [
     {
       "rank": 1,
-      "accuracy": 0.2376,
-      "flops": 1307648,
-      "reward": 0.3066337659309388,
-      "episode": 4
-    },
-    {
-      "rank": 2,
-      "accuracy": 0.2245,
-      "flops": 1825792,
-      "reward": 0.2830366365328033,
+      "accuracy": 0.2602,
+      "flops": 1986560,
+      "reward": 0.32611297208706014,
       "episode": 3
     },
     {
-      "rank": 3,
-      "accuracy": 0.2131,
-      "flops": 2293760,
-      "reward": 0.2644070262677125,
+      "rank": 2,
+      "accuracy": 0.2397,
+      "flops": 1355776,
+      "reward": 0.3085622398547619,
       "episode": 1
     },
     {
+      "rank": 3,
+      "accuracy": 0.2058,
+      "flops": 1599488,
+      "reward": 0.26187533851060174,
+      "episode": 4
+    },
+    {
       "rank": 4,
-      "accuracy": 0.2121,
-      "flops": 2594816,
-      "reward": 0.2609042232777364,
-      "episode": 5
+      "accuracy": 0.1511,
+      "flops": 3058688,
+      "reward": 0.183740503486095,
+      "episode": 2
     },
     {
       "rank": 5,
-      "accuracy": 0.2019,
-      "flops": 1564672,
-      "reward": 0.25730876924109836,
-      "episode": 2
+      "accuracy": 0.1261,
+      "flops": 1553408,
+      "reward": 0.16078776530878297,
+      "episode": 5
     }
   ]
 }
