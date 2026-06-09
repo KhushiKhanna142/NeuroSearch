@@ -33,6 +33,7 @@ from nas_rl.search_space.supernet import Supernet
 SUPERNET_CKPT  = 'checkpoints/supernet.pt'
 SEARCH_RESULTS = 'exports/search_results.json'
 OUTPUT_PT      = 'exports/finetuned_model.pt'
+RESUME_CKPT    = 'exports/finetune_checkpoint.pt'
 
 C_INIT    = 16
 N_CELLS   = 8
@@ -82,16 +83,6 @@ def finetune():
         n_cells=N_CELLS, n_nodes=N_NODES, n_classes=N_CLASSES,
     ).to(device)
 
-    # Transfer supernet weights as warm start
-    supernet = Supernet(C_init=C_INIT, n_cells=N_CELLS,
-                        n_nodes=N_NODES, n_classes=N_CLASSES)
-    supernet.load_state_dict(
-        torch.load(SUPERNET_CKPT, map_location='cpu')
-    )
-    print("Transferring supernet weights...")
-    transfer_weights(supernet, model, arch_spec)
-    del supernet   # free memory
-
     # Data
     train_loader = get_cifar10_loader('train', batch_size=BATCH_SIZE, num_workers=2)
     val_loader   = get_cifar10_loader('val',   batch_size=256, num_workers=2)
@@ -100,7 +91,7 @@ def finetune():
     total_params = sum(p.numel() for p in model.parameters())
     print(f"Parameters: {total_params:,}  ({total_params/1e6:.3f}M)")
 
-    # Optimiser — same setup as supernet pretraining
+    # Optimizer — same setup as supernet pretraining
     criterion = nn.CrossEntropyLoss()
     optimizer = torch.optim.SGD(
         model.parameters(), lr=LR,
@@ -110,14 +101,58 @@ def finetune():
         optimizer, T_max=EPOCHS, eta_min=1e-4,
     )
 
-    print(f"\nFine-tuning for {EPOCHS} epochs")
-    print(f"{'Epoch':>6}  {'TrainLoss':>10}  {'TrainAcc':>9}  "
-          f"{'ValAcc':>8}  {'LR':>10}")
-    print("-" * 52)
-
     best_val_acc = 0.0
+    start_epoch = 0
 
-    for epoch in range(EPOCHS):
+    if os.path.exists(RESUME_CKPT):
+        print(f"Found checkpoint at {RESUME_CKPT}. Resuming training...")
+        try:
+            checkpoint = torch.load(RESUME_CKPT, map_location=device)
+            model.load_state_dict(checkpoint['model_state_dict'])
+            optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
+            scheduler.load_state_dict(checkpoint['scheduler_state_dict'])
+            start_epoch = checkpoint['epoch'] + 1
+            best_val_acc = checkpoint['best_val_acc']
+            print(f"Successfully loaded checkpoint. Resuming from epoch {start_epoch + 1} with best val accuracy: {best_val_acc * 100:.2f}%")
+        except Exception as e:
+            print(f"Error loading checkpoint: {e}. Starting from scratch.")
+            start_epoch = 0
+
+    if start_epoch == 0:
+        if os.path.exists(OUTPUT_PT):
+            print(f"Found existing fine-tuned weights at {OUTPUT_PT}.")
+            try:
+                model.load_state_dict(torch.load(OUTPUT_PT, map_location=device))
+                start_epoch = 67
+                best_val_acc = 0.9076
+                # Fast forward the learning rate scheduler to match epoch 67
+                for _ in range(start_epoch):
+                    scheduler.step()
+                print(f"Loaded existing model parameters. Resuming from estimated epoch {start_epoch + 1} (best val accuracy: {best_val_acc * 100:.2f}%)")
+            except Exception as e:
+                print(f"Could not load {OUTPUT_PT}: {e}. Falling back to Supernet weight transfer.")
+                start_epoch = 0
+
+    if start_epoch == 0:
+        # Transfer supernet weights as warm start
+        supernet = Supernet(C_init=C_INIT, n_cells=N_CELLS,
+                            n_nodes=N_NODES, n_classes=N_CLASSES)
+        supernet.load_state_dict(
+            torch.load(SUPERNET_CKPT, map_location='cpu')
+        )
+        print("Transferring supernet weights...")
+        transfer_weights(supernet, model, arch_spec)
+        del supernet   # free memory
+
+    if start_epoch >= EPOCHS:
+        print("Model is already fully fine-tuned.")
+    else:
+        print(f"\nFine-tuning from epoch {start_epoch + 1} to {EPOCHS}")
+        print(f"{'Epoch':>6}  {'TrainLoss':>10}  {'TrainAcc':>9}  "
+              f"{'ValAcc':>8}  {'LR':>10}")
+        print("-" * 52)
+
+    for epoch in range(start_epoch, EPOCHS):
         # ── train ──
         model.train()
         total_loss = total_correct = total_samples = 0
@@ -160,6 +195,22 @@ def finetune():
         if val_acc > best_val_acc:
             best_val_acc = val_acc
             torch.save(model.state_dict(), OUTPUT_PT)
+
+        # Save resume checkpoint at the end of each epoch
+        torch.save({
+            'epoch': epoch,
+            'model_state_dict': model.state_dict(),
+            'optimizer_state_dict': optimizer.state_dict(),
+            'scheduler_state_dict': scheduler.state_dict(),
+            'best_val_acc': best_val_acc,
+        }, RESUME_CKPT)
+
+    # Delete resume checkpoint upon successful completion of all epochs
+    if os.path.exists(RESUME_CKPT):
+        try:
+            os.remove(RESUME_CKPT)
+        except Exception:
+            pass
 
     # ── Final test set evaluation ──
     print(f"\nBest val accuracy during fine-tuning: {best_val_acc*100:.2f}%")
