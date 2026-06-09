@@ -44,22 +44,24 @@ class Identity(nn.Module):
 
 class FactorizedReduce(nn.Module):
     """
-    Halves spatial dimensions while preserving channel count.
+    Halves spatial dimensions while optionally projecting channel count.
     Used for skip connections that cross a reduction cell (stride=2).
 
     Applies two parallel conv1x1 ops on spatially offset slices of the
-    input, then concatenates. Each branch outputs C//2 channels so the
-    concatenated result has C channels total — matching the expected
+    input, then concatenates. Each branch outputs C_out//2 channels so the
+    concatenated result has C_out channels total — matching the expected
     output of a reduction cell.
     """
-    def __init__(self, C):
+    def __init__(self, C_in, C_out=None):
         super().__init__()
-        assert C % 2 == 0, "FactorizedReduce requires even channel count"
+        if C_out is None:
+            C_out = C_in
+        assert C_out % 2 == 0, "FactorizedReduce requires even output channel count"
         self.relu = nn.ReLU(inplace=False)
-        # Two parallel 1x1 convs, each outputting C//2 channels
-        self.conv_a = nn.Conv2d(C, C // 2, 1, stride=2, padding=0, bias=False)
-        self.conv_b = nn.Conv2d(C, C // 2, 1, stride=2, padding=0, bias=False)
-        self.bn = nn.BatchNorm2d(C)
+        # Two parallel 1x1 convs, each outputting C_out//2 channels
+        self.conv_a = nn.Conv2d(C_in, C_out // 2, 1, stride=2, padding=0, bias=False)
+        self.conv_b = nn.Conv2d(C_in, C_out // 2, 1, stride=2, padding=0, bias=False)
+        self.bn = nn.BatchNorm2d(C_out)
 
     def forward(self, x):
         x = self.relu(x)
