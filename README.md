@@ -8,6 +8,40 @@ It features a **real-time React + FastAPI frontend dashboard** that lets you mon
 
 ---
 
+## 🔄 Pipeline Workflow & Architecture Diagram
+
+Below is the conceptual layout of how the Reinforcement Learning agent (LSTM Controller) searches the cell DAG space using the weight-shared Supernet, combined with the real-time FastAPI + React dashboard:
+
+```mermaid
+flowchart TB
+    subgraph RL_Loop [NAS Search Loop]
+        A[LSTM Controller] -->|1. Predicts cell topologies| B[Architecture Spec]
+        B -->|2. Configures path| C[Supernet / Weight-sharing]
+        C -->|3. Evaluate path on Val set| D[Accuracy Evaluator]
+        B -->|3. Compute cost analytically| E[FLOPs Estimator]
+        D --> F[Reward Combiner]
+        E --> F
+        F -->|4. Reward + Advantage| G[Baseline EMA]
+        G -->|5. REINFORCE Policy Gradient| A
+    end
+
+    subgraph Export_Phase [Export & Transfer]
+        H[Best Found Arch] -->|1. Extract topology| I[Standalone Model]
+        C -->|2. Warm-start weights| I
+        I -->|3. Serialise| J[ONNX / CoreML Models]
+    end
+
+    subgraph Web_Dashboard [Real-Time Monitoring & Demo]
+        K[FastAPI Backend] -->|Poll status/logs| L[logs/train_log.txt]
+        K -->|Load ONNX| J
+        M[React UI Dashboard] <-->|1. HTTP / SSE logs| K
+        M -->|2. Interactive D3 Cell Graph| N[Cell DAG Visualisation]
+        M -->|3. Drag & Drop Upload| O[Inference Demo Panel]
+    end
+
+    B -.-> H
+```
+
 ## 🏛️ Project Architecture
 
 ```
