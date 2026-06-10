@@ -118,7 +118,7 @@ export default function SearchMonitor() {
 
       {/* Stats Bar */}
       <div style={{ display: 'flex', gap: 14, marginBottom: 28, flexWrap: 'wrap' }}>
-        <StatCard label="Episodes Run"      value={data.length}                        color={cardColor(0)} />
+        <StatCard label="Episodes Run"      value={Math.max(...data.map(d => d.episode))}  color={cardColor(0)} />
         <StatCard label={hasFinetune ? "Best Val Accuracy (Fine-tuned)" : "Best Val Accuracy (Search)"}
                   value={`${(displayBestAcc * 100).toFixed(1)}%`}
                   sub={hasFinetune ? "Post-search fine-tuned performance" : "Shared weight supernet evaluation"}
@@ -155,9 +155,9 @@ export default function SearchMonitor() {
               <YAxis domain={[0, 2.5]} tick={{ fontSize: 11 }} />
               <Tooltip contentStyle={{ fontSize: 12 }} />
               <ReferenceLine y={MAX_ENT} strokeDasharray="4 4" stroke="#94A3B8"
-                label={{ value: 'max', position: 'right', fontSize: 10, fill: '#94A3B8' }} />
+                label={{ value: 'Max entropy (2.079)', position: 'insideRight', fontSize: 10, fill: '#64748B', offset: 10 }} />
               <ReferenceLine y={1.0} strokeDasharray="4 4" stroke="#EF4444"
-                label={{ value: 'collapse ⚠', position: 'right', fontSize: 10, fill: '#EF4444' }} />
+                label={{ value: 'Collapse threshold (1.0)', position: 'insideRight', fontSize: 10, fill: '#EF4444', offset: 10 }} />
               <Line type="monotone" dataKey="entropy" stroke="#E67E22" dot={false} name="Entropy" strokeWidth={2.5} />
             </LineChart>
           </ResponsiveContainer>
@@ -168,9 +168,9 @@ export default function SearchMonitor() {
           <ResponsiveContainer width="100%" height={240}>
             <ScatterChart margin={{ top: 10, right: 20, bottom: 20, left: -10 }}>
               <CartesianGrid strokeDasharray="3 3" stroke="#F1F5F9" />
-              <XAxis dataKey="x" name="FLOPs (M)" unit="M" tick={{ fontSize: 11 }}
+              <XAxis type="number" dataKey="x" name="FLOPs (M)" unit="M" tick={{ fontSize: 11 }}
                 label={{ value: 'FLOPs (M)', position: 'insideBottom', offset: -12, fontSize: 11 }} />
-              <YAxis dataKey="y" name="Accuracy" unit="%" tick={{ fontSize: 11 }}
+              <YAxis type="number" dataKey="y" name="Accuracy" unit="%" tick={{ fontSize: 11 }}
                 label={{ value: 'Accuracy (%)', angle: -90, position: 'insideLeft', fontSize: 11 }} />
               <Tooltip cursor={{ strokeDasharray: '3 3' }} contentStyle={{ fontSize: 12 }}
                 formatter={(v, n) => [n === 'x' ? `${v}M` : `${v}%`, n === 'x' ? 'FLOPs' : 'Accuracy']} />
