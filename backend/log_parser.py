@@ -21,38 +21,52 @@ def parse_log():
     if not os.path.exists(LOG_PATH):
         return pretrain_epochs, search_episodes
 
+    # Pretrain epoch line: matches "     1    3.6232      10.43%    0.024975"
+    pretrain_pattern = re.compile(
+        r'^\s*(?P<epoch>\d+)\s+(?P<loss>[\d\.]+)\s+(?P<acc>[\d\.]+)%\s+(?P<lr>[\d\.]+)$'
+    )
+
+    # Search episode line: matches "    10   13.32%     88.5M   0.1280  -1.8001   2.079   yes   21.4s"
+    search_pattern = re.compile(
+        r'^\s*(?P<episode>\d+)\s+(?P<acc>[\d\.]+)%\s+(?P<flops>[\d\.]+)M\s+(?P<raw_reward>[\-\d\.]+)\s+(?P<reward>[\-\d\.]+)\s+(?P<entropy>[\d\.]+)\s+(?P<new>yes|no)\s+(?P<time>[\d\.]+)s$'
+    )
+
     with open(LOG_PATH, 'r') as f:
         for line in f:
             line = line.strip()
             if not line:
                 continue
 
-            if line.startswith('PRETRAIN'):
-                m = {k: v for k, v in re.findall(r'(\w+)=([^\s|]+)', line)}
+            # Try to match pretrain line
+            pm = pretrain_pattern.match(line)
+            if pm:
                 try:
                     pretrain_epochs.append({
-                        'epoch':    int(m.get('epoch', 0)),
-                        'loss':     float(m.get('loss', 0)),
-                        'accuracy': float(m.get('acc', 0)),
-                        'lr':       float(m.get('lr', 0)),
+                        'epoch':    int(pm.group('epoch')),
+                        'loss':     float(pm.group('loss')),
+                        'accuracy': float(pm.group('acc')) / 100.0,
+                        'lr':       float(pm.group('lr')),
                     })
-                except (ValueError, KeyError):
+                except ValueError:
                     pass
+                continue
 
-            elif line.startswith('SEARCH'):
-                m = {k: v for k, v in re.findall(r'(\w+)=([^\s|]+)', line)}
+            # Try to match search line
+            sm = search_pattern.match(line)
+            if sm:
                 try:
                     search_episodes.append({
-                        'episode':    int(m.get('episode', 0)),
-                        'accuracy':   float(m.get('accuracy', 0)),
-                        'flops':      float(m.get('flops', 0)),
-                        'raw_reward': float(m.get('raw_reward', 0)),
-                        'reward':     float(m.get('reward', 0)),
-                        'entropy':    float(m.get('entropy', 0)),
-                        'is_new':     m.get('is_new', 'True') == 'True',
+                        'episode':    int(sm.group('episode')),
+                        'accuracy':   float(sm.group('acc')) / 100.0,
+                        'flops':      float(sm.group('flops')) * 1e6,
+                        'raw_reward': float(sm.group('raw_reward')),
+                        'reward':     float(sm.group('reward')),
+                        'entropy':    float(sm.group('entropy')),
+                        'is_new':     sm.group('new') == 'yes',
                     })
-                except (ValueError, KeyError):
+                except ValueError:
                     pass
+                continue
 
     return pretrain_epochs, search_episodes
 
