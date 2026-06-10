@@ -8,6 +8,26 @@ It features a **real-time React + FastAPI frontend dashboard** that lets you mon
 
 ---
 
+## 🏆 Discovered Model & Fine-Tuning Performance
+
+After completing the 200-episode NAS reinforcement learning search loop, the best-found standalone cell layout (Rank 1 candidate) was fine-tuned on the full CIFAR-10 training set.
+
+### Standalone Model Metrics (`exports/finetune_results.json`)
+* **Top-1 Test Accuracy**: **92.14%** (State-of-the-art for lightweight design)
+* **Top-5 Test Accuracy**: **99.73%**
+* **Model Parameters**: **593.4K** (Highly compact)
+* **Computational Cost**: **142.89M FLOPs**
+* **Fine-Tuning Budget**: **100 epochs** on Cosine Annealing learning rate schedule
+
+### Op Choices Breakdown
+The discovered cells route operations across the 14 DAG edges using:
+* **Separable Convolutions (SepConv)**: 36 edges
+* **Standard Convolutions (ConvBNReLU)**: 36 edges
+* **Skip Connections (Identity)**: 17 edges
+* **Avg Pooling / Max Pooling**: 14 edges
+
+---
+
 ## 🔄 Pipeline Workflow & Architecture Diagram
 
 Below is the conceptual layout of how the Reinforcement Learning agent (LSTM Controller) searches the cell DAG space using the weight-shared Supernet, combined with the real-time FastAPI + React dashboard:
