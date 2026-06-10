@@ -45,6 +45,8 @@ export default function SearchMonitor() {
   const bestAcc  = Math.max(...data.map(d => d.accuracy));
   const bestFlops= data.find(d => d.accuracy === bestAcc)?.flops || 0;
   const unique   = new Set(data.map(d => JSON.stringify({ a: d.accuracy, f: d.flops }))).size;
+  const hasFinetune = finetuneData && finetuneData.val_acc;
+  const displayBestAcc = hasFinetune ? finetuneData.val_acc : bestAcc;
 
   // FLOPs histogram
   const buckets = [
@@ -117,7 +119,10 @@ export default function SearchMonitor() {
       {/* Stats Bar */}
       <div style={{ display: 'flex', gap: 14, marginBottom: 28, flexWrap: 'wrap' }}>
         <StatCard label="Episodes Run"      value={data.length}                        color={cardColor(0)} />
-        <StatCard label="Best Val Accuracy" value={`${(bestAcc * 100).toFixed(1)}%`}   color={cardColor(1)} />
+        <StatCard label={hasFinetune ? "Best Val Accuracy (Fine-tuned)" : "Best Val Accuracy (Search)"}
+                  value={`${(displayBestAcc * 100).toFixed(1)}%`}
+                  sub={hasFinetune ? "Post-search fine-tuned performance" : "Shared weight supernet evaluation"}
+                  color={cardColor(1)} />
         <StatCard label="Best FLOPs"        value={`${(bestFlops / 1e6).toFixed(1)}M`} color={cardColor(2)} />
         <StatCard label="Unique Archs Found"value={unique}                              color={cardColor(3)} />
       </div>
