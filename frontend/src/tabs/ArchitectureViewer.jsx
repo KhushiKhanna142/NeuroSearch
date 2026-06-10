@@ -35,6 +35,7 @@ export default function ArchitectureViewer() {
   const [results, setResults] = useState(null);
   const [selected, setSelected] = useState(1);
   const [archData, setArchData] = useState(null);
+  const [finetuneData, setFinetuneData] = useState(null);
   const [loading, setLoading]   = useState(true);
   const [error, setError]       = useState(null);
   const svgRef = useRef(null);
@@ -44,6 +45,10 @@ export default function ArchitectureViewer() {
     api.getSearchResults()
       .then(r => { setResults(r.data.top5); setLoading(false); })
       .catch(() => { setError('Cannot reach backend — is it running on port 8000?'); setLoading(false); });
+
+    api.getFinetuneResults()
+      .then(r => setFinetuneData(r.data))
+      .catch(() => {});
   }, []);
 
   // Load selected architecture
@@ -113,7 +118,12 @@ export default function ArchitectureViewer() {
                         {r.rank === 1 ? '🥇' : r.rank === 2 ? '🥈' : r.rank === 3 ? '🥉' : `#${r.rank}`}
                       </td>
                       <td style={{ padding: '10px 12px', fontWeight: 600, color: '#27AE60' }}>
-                        {(r.accuracy * 100).toFixed(1)}%
+                        {((r.rank === 1 && finetuneData?.val_acc ? finetuneData.val_acc : r.accuracy) * 100).toFixed(1)}%
+                        {r.rank === 1 && finetuneData?.val_acc && (
+                          <span style={{ fontSize: 9, display: 'block', color: '#1E3A5F', fontWeight: 500 }}>
+                            (fine-tuned)
+                          </span>
+                        )}
                       </td>
                       <td style={{ padding: '10px 12px' }}>{(r.flops / 1e6).toFixed(1)}M</td>
                       <td style={{ padding: '10px 12px', color: '#2E75B6', fontWeight: 500 }}>
@@ -142,7 +152,9 @@ export default function ArchitectureViewer() {
               </div>
               {archData && (
                 <div style={{ fontSize: 12, color: '#64748B', textAlign: 'right' }}>
-                  <span style={{ fontWeight: 600, color: '#27AE60' }}>{(archData.accuracy * 100).toFixed(1)}%</span> acc &nbsp;|&nbsp;
+                  <span style={{ fontWeight: 600, color: '#27AE60' }}>
+                    {((selected === 1 && finetuneData?.val_acc ? finetuneData.val_acc : archData.accuracy) * 100).toFixed(1)}%
+                  </span> acc {selected === 1 && finetuneData?.val_acc && "(fine-tuned)"} &nbsp;|&nbsp;
                   <span style={{ fontWeight: 600, color: '#2E75B6' }}>{(archData.flops / 1e6).toFixed(1)}M</span> FLOPs
                 </div>
               )}

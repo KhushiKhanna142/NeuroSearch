@@ -153,6 +153,17 @@ async def inference(file: UploadFile = File(...)):
     return result
 
 
+@app.get("/api/finetune-results")
+def finetune_results():
+    """Return the final post-search fine-tuning results if available."""
+    path = _BASE / 'exports' / 'finetune_results.json'
+    if not path.exists():
+        return {}
+    with open(path) as f:
+        data = json.load(f)
+    return data
+
+
 @app.get("/api/stream-log")
 async def stream_log():
     """
@@ -174,3 +185,18 @@ async def stream_log():
             await asyncio.sleep(2)
 
     return StreamingResponse(event_generator(), media_type="text/event-stream")
+
+
+# Serve built static files from frontend/dist if they exist
+from fastapi.staticfiles import StaticFiles
+from fastapi.responses import FileResponse
+
+dist_path = _BASE / 'frontend' / 'dist'
+if dist_path.exists():
+    app.mount("/assets", StaticFiles(directory=dist_path / "assets"), name="assets")
+
+    @app.get("/{full_path:path}")
+    async def serve_frontend(full_path: str):
+        if full_path.startswith("api/") or full_path.startswith("docs") or full_path.startswith("openapi.json"):
+            raise HTTPException(404)
+        return FileResponse(dist_path / "index.html")

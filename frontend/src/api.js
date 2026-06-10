@@ -1,6 +1,8 @@
 import axios from 'axios';
 
-const BASE = 'http://localhost:8000';
+const BASE = typeof window !== 'undefined' && (window.location.origin.includes('localhost:5173') || window.location.origin.includes('127.0.0.1:5173'))
+  ? 'http://localhost:8000'
+  : window.location.origin;
 
 export const api = {
   getStatus:       () => axios.get(`${BASE}/api/status`),
