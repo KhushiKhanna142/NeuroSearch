@@ -15,6 +15,13 @@ export default function InferenceDemo() {
   const [result, setResult]       = useState(null);
   const [loading, setLoading]     = useState(false);
   const [error, setError]         = useState(null);
+  const [finetuneData, setFinetuneData] = useState(null);
+
+  React.useEffect(() => {
+    api.getFinetuneResults()
+      .then(r => setFinetuneData(r.data))
+      .catch(() => {});
+  }, []);
 
   const loadImage = (file) => {
     setImageFile(file);
@@ -178,7 +185,9 @@ export default function InferenceDemo() {
                 display: 'flex', justifyContent: 'space-between', fontSize: 11, color: '#94A3B8',
               }}>
                 <span>⚡ {result.latency_ms.toFixed(1)} ms inference</span>
-                <span>NAS-found model · ONNX Runtime</span>
+                <span>{finetuneData && finetuneData.test_top1 
+                  ? `Fine-tuned Model (${(finetuneData.test_top1*100).toFixed(1)}% Acc, ${(finetuneData.params/1e3).toFixed(0)}K params)` 
+                  : "NAS-found model · ONNX Runtime"}</span>
               </div>
             </div>
           ) : (

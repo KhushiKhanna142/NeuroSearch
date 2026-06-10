@@ -7,6 +7,7 @@ export const api = {
   getSearchResults:() => axios.get(`${BASE}/api/search-results`),
   getSearchLog:    () => axios.get(`${BASE}/api/search-log`),
   getArchitecture: (rank) => axios.get(`${BASE}/api/architecture/${rank}`),
+  getFinetuneResults: () => axios.get(`${BASE}/api/finetune-results`),
   runInference:    (formData) => axios.post(`${BASE}/api/inference`, formData, {
     headers: { 'Content-Type': 'multipart/form-data' }
   }),

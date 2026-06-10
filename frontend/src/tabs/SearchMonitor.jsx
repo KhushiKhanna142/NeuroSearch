@@ -11,6 +11,7 @@ const MAX_ENT = 2.079; // log(8) — maximum possible entropy over 8 ops
 
 export default function SearchMonitor() {
   const [data,    setData]    = useState(null);
+  const [finetuneData, setFinetuneData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error,   setError]   = useState(null);
 
@@ -18,6 +19,10 @@ export default function SearchMonitor() {
     api.getSearchLog()
       .then(r => { setData(r.data.episodes); setLoading(false); setError(null); })
       .catch(e => { setError('Cannot reach backend — is it running on port 8000?'); setLoading(false); });
+
+    api.getFinetuneResults()
+      .then(r => setFinetuneData(r.data))
+      .catch(() => {});
   };
 
   useEffect(() => {
@@ -75,6 +80,39 @@ export default function SearchMonitor() {
     <div>
       <SectionHeader title="Search Monitor"
         subtitle="Live view of the NAS training process — updates every 5 seconds during an active run" />
+
+      {/* Fine-Tuning Banner */}
+      {finetuneData && finetuneData.test_top1 && (
+        <div style={{
+          background: 'linear-gradient(135deg, #1E3A5F, #2E75B6)',
+          borderRadius: 12, padding: '16px 20px', color: '#fff',
+          display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+          marginBottom: 20, boxShadow: '0 4px 12px rgba(46,117,182,0.15)',
+        }}>
+          <div>
+            <div style={{ fontSize: 16, fontWeight: 700, display: 'flex', alignItems: 'center', gap: 6 }}>
+              <span>🏆</span> Post-Search Fine-Tuned Model Results
+            </div>
+            <div style={{ fontSize: 12, opacity: 0.85, marginTop: 2 }}>
+              Best candidate fine-tuned for {finetuneData.epochs} epochs on full CIFAR-10 training set
+            </div>
+          </div>
+          <div style={{ display: 'flex', gap: 24, textAlign: 'right', flexWrap: 'wrap' }}>
+            <div>
+              <div style={{ fontSize: 20, fontWeight: 800, color: '#4ADE80' }}>{(finetuneData.test_top1 * 100).toFixed(1)}%</div>
+              <div style={{ fontSize: 10, opacity: 0.8 }}>Top-1 Test Acc</div>
+            </div>
+            <div>
+              <div style={{ fontSize: 20, fontWeight: 800, color: '#38BDF8' }}>{(finetuneData.test_top5 * 100).toFixed(1)}%</div>
+              <div style={{ fontSize: 10, opacity: 0.8 }}>Top-5 Test Acc</div>
+            </div>
+            <div>
+              <div style={{ fontSize: 20, fontWeight: 800 }}>{(finetuneData.params / 1e3).toFixed(0)}K</div>
+              <div style={{ fontSize: 10, opacity: 0.8 }}>Parameters</div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Stats Bar */}
       <div style={{ display: 'flex', gap: 14, marginBottom: 28, flexWrap: 'wrap' }}>
